@@ -1,0 +1,12 @@
+<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Admin</title>
+<style>body{font:15px system-ui;background:#0e1117;color:#eee;padding:14px}input,button{padding:10px;border-radius:8px;border:0;margin:3px 0;font-size:15px}button{background:#8b5cf6;color:#fff}.c{background:#181d27;border-radius:12px;padding:10px;margin:8px 0}</style></head><body>
+<h2>GIFT HUNTER · Админка</h2><input id="t" type="password" placeholder="Admin token"> <button onclick="load()">Войти</button><div id="o"></div>
+<script>
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const H=()=>({'x-admin-token':document.getElementById('t').value,'Content-Type':'application/json'});
+const post=async(p,b)=>{await fetch('/api/admin/'+p,{method:'POST',headers:H(),body:JSON.stringify(b)});load()};
+async function load(){const r=await fetch('/api/admin/stats',{headers:H()});const d=await r.json();const o=document.getElementById('o');if(!r.ok){o.textContent=d.error;return}
+o.innerHTML=`<div class="c">Пользователей: ${d.total_users} · Подарков выдано: ${d.gifts} · Платежей: ${d.payments} · Stars: ${d.stars}</div>`+
+d.users.map(u=>`<div class="c"><b>${esc(u.first_name)}</b> ${u.username?'@'+esc(u.username):''} · #${u.game_id} · ID ${esc(u.id)}<br>охот: ${u.total_hunts} · бонус: ${u.bonus_hunts} · ⭐ ${u.stars_spent} ${u.banned?'· 🚫':''}<br>
+<button onclick="post('bonus',{id:'${esc(u.id)}',amount:5})">+5 охот</button> <button onclick="post('ban',{id:'${esc(u.id)}',banned:${!u.banned}})">${u.banned?'Разбанить':'Бан'}</button></div>`).join('')}
+</script></body></html>

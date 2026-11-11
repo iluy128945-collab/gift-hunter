@@ -1,0 +1,45 @@
+<!doctype html><html lang="ru"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>GIFT HUNTER</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+:root{--bg:#0e1117;--card:#181d27;--tx:#f2f4f8;--mut:#8a93a6;--acc:#8b5cf6}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--tx);font:16px -apple-system,system-ui,sans-serif;padding-bottom:80px}
+.p{padding:16px;max-width:520px;margin:auto}h1{font-size:20px;margin:0 0 4px}.mut{color:var(--mut);font-size:14px}
+.card{background:var(--card);border-radius:16px;padding:14px;margin:10px 0}
+button{background:var(--acc);color:#fff;border:0;border-radius:12px;padding:14px;font-size:16px;width:100%}
+.row{display:flex;justify-content:space-between;gap:8px;padding:6px 0}
+.ava{width:84px;height:84px;border-radius:50%;object-fit:cover;background:var(--acc);display:flex;align-items:center;justify-content:center;font-size:34px;margin:auto}
+.big{font-size:80px;text-align:center}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.g{background:var(--card);border-radius:12px;padding:10px;text-align:center;font-size:12px}.g b{display:block;font-size:30px}
+.common{border:1px solid #556}.rare{border:1px solid #38bdf8}.epic{border:1px solid #a855f7}.legendary{border:1px solid #f59e0b}.mythic{border:1px solid #ef4444}
+nav{position:fixed;bottom:0;left:0;right:0;display:flex;background:var(--card);padding:8px 0 calc(8px + env(safe-area-inset-bottom))}
+nav a{flex:1;text-align:center;font-size:12px;color:var(--mut)}nav a.on{color:var(--tx)}nav span{display:block;font-size:22px}
+</style></head><body><div class="p" id="v">Загрузка…</div>
+<nav id="nav"></nav>
+<script>
+const tg=Telegram.WebApp;tg.ready();tg.expand();try{tg.setHeaderColor('#0e1117');tg.setBackgroundColor('#0e1117')}catch(e){}
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const api=async(p,b)=>{const r=await fetch('/api/'+p,{method:b?'POST':'GET',headers:{'Authorization':'tma '+tg.initData,'Content-Type':'application/json'},body:b?JSON.stringify(b):undefined});const d=await r.json();if(!r.ok)throw new Error(d.error||'Ошибка');return d};
+const T=[['hunt','🎯','Охота'],['col','🎁','Коллекция'],['shop','⭐','Магазин'],['top','🏆','Рейтинг'],['me','👤','Профиль']];
+let me,tab='hunt';const v=document.getElementById('v');
+function nav(){document.getElementById('nav').innerHTML=T.map(([k,i,n])=>`<a class="${k==tab?'on':''}" onclick="go('${k}')"><span>${i}</span>${n}</a>`).join('')}
+async function go(t){tab=t;nav();try{await R[t]()}catch(e){v.innerHTML='<div class="card">'+esc(e.message)+'</div>'}}
+const R={
+hunt(){v.innerHTML=`<h1>GIFT HUNTER</h1><div class="mut">Охоться. Собирай. Владей.</div><div class="card"><div class="big" id="r">🎁</div><div id="rn" style="text-align:center;min-height:44px"></div></div>
+<div class="mut" style="text-align:center;margin-bottom:8px">Бесплатных охот: ${me.free_hunts_left} · Купленных: ${me.bonus_hunts}</div><button id="b" onclick="hunt()">🎯 Охотиться</button>`},
+async col(){const c=await api('collection');v.innerHTML=`<h1>Коллекция</h1><div class="mut">Всего подарков: ${me.collection_count}</div><div class="grid" style="margin-top:10px">${c.map(g=>`<div class="g ${esc(g.rarity)}"><b>${esc(g.emoji)}</b>${esc(g.name)}<br>×${g.qty}</div>`).join('')||'<div class="card">Пока пусто — начните охоту!</div>'}</div>`},
+async shop(){const s=await api('shop');v.innerHTML=`<h1>Магазин</h1><div class="mut">Оплата через Telegram Stars</div>`+s.map(p=>`<div class="card row"><div>${esc(p.title)}</div><button style="width:auto;padding:10px 16px" onclick="buy('${esc(p.id)}')">${p.stars} ⭐</button></div>`).join('')},
+async top(){const t=await api('leaderboard');v.innerHTML=`<h1>Рейтинг</h1>`+t.map((u,i)=>`<div class="card row"><div>${i+1}. ${esc(u.first_name)} ${u.username?'@'+esc(u.username):''}</div><b>${u.score}</b></div>`).join('')},
+async me(){const h=await api('history');me=await api('me');const n=[me.first_name,me.last_name].filter(Boolean).join(' ');
+const ava=me.photo_url?`<img class="ava" src="${esc(me.photo_url)}">`:`<div class="ava">${esc((me.first_name||'?')[0])}</div>`;
+v.innerHTML=`<div class="card" style="text-align:center">${ava}<h1 style="margin-top:10px">${esc(n)}</h1><div class="mut">${me.username?'@'+esc(me.username):'username не задан'}</div></div>
+<div class="card"><div class="row"><span>Игровой ID</span><b>#${me.game_id}</b></div><div class="row"><span>Telegram ID</span><b>${esc(me.telegram_id)}</b></div>
+<div class="row"><span>Подарков в коллекции</span><b>${me.collection_count}</b></div><div class="row"><span>Всего охот</span><b>${me.total_hunts}</b></div>
+<div class="row"><span>Потрачено Stars</span><b>${me.stars_spent} ⭐</b></div><div class="row"><span>Купленных охот</span><b>${me.bonus_hunts}</b></div></div>
+<h1>История</h1>`+(h.map(x=>`<div class="card"><div>${esc(x.description)}</div><div class="mut">${new Date(x.created_at).toLocaleString('ru')}</div></div>`).join('')||'<div class="card mut">Операций пока нет</div>')}};
+async function hunt(){const b=document.getElementById('b');b.disabled=true;try{const d=await api('hunt',{});me=d.profile;document.getElementById('r').textContent=d.gift.emoji;document.getElementById('rn').innerHTML=`<b>${esc(d.gift.name)}</b><br><span class="mut">${esc(d.gift.rarity)}</span>`;tg.HapticFeedback?.notificationOccurred('success');
+R.hunt();document.getElementById('r').textContent=d.gift.emoji;document.getElementById('rn').innerHTML=`<b>${esc(d.gift.name)}</b><br><span class="mut">${esc(d.gift.rarity)}</span>`}catch(e){tg.showAlert(e.message);b.disabled=false}}
+async function buy(id){try{const {link}=await api('buy',{pack:id});tg.openInvoice(link,async s=>{if(s=='paid'){await new Promise(r=>setTimeout(r,1500));me=await api('me');go('shop');tg.showAlert('Оплата прошла!')}})}catch(e){tg.showAlert(e.message)}}
+(async()=>{if(!tg.initData){v.innerHTML='<div class="card">Откройте приложение из Telegram.</div>';return}try{me=await api('me');go('hunt')}catch(e){v.innerHTML='<div class="card">'+esc(e.message)+'</div>'}})();
+</script></body></html>
